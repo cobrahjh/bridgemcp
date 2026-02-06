@@ -41,6 +41,10 @@ document.getElementById('saveToken').addEventListener('click', () => {
         setTimeout(() => { savedMsg.style.display = 'none'; }, 3000);
         // Trigger reconnect with new settings
         chrome.runtime.sendMessage({ type: 'reconnect' });
+        // Check status after reconnect attempt
+        setTimeout(checkStatus, 1000);
+        setTimeout(checkStatus, 2000);
+        setTimeout(checkStatus, 3000);
     });
 });
 
@@ -70,3 +74,5 @@ function checkStatus() {
 }
 
 checkStatus();
+// Poll status every 2 seconds while popup is open
+setInterval(checkStatus, 2000);
