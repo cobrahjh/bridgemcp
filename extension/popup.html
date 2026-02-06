@@ -3,7 +3,7 @@
 <head>
   <style>
     body {
-      width: 280px;
+      width: 300px;
       padding: 16px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       margin: 0;
@@ -28,21 +28,21 @@
       background: #f8d7da;
       color: #721c24;
     }
-    .token-section {
+    .section {
       margin-bottom: 12px;
     }
-    .token-section label {
+    .section label {
       display: block;
       font-size: 12px;
       font-weight: 600;
       margin-bottom: 4px;
       color: #333;
     }
-    .token-row {
+    .input-row {
       display: flex;
       gap: 6px;
     }
-    .token-row input {
+    .input-row input {
       flex: 1;
       padding: 6px 8px;
       border: 1px solid #ccc;
@@ -50,17 +50,26 @@
       font-size: 11px;
       font-family: monospace;
     }
-    .token-row button {
-      padding: 6px 12px;
+    .input-row button, .copy-btn {
+      padding: 6px 10px;
       border: none;
       border-radius: 4px;
       background: #0066cc;
       color: white;
       font-size: 11px;
       cursor: pointer;
+      white-space: nowrap;
     }
-    .token-row button:hover {
+    .input-row button:hover, .copy-btn:hover {
       background: #0052a3;
+    }
+    .copy-btn {
+      background: #6c757d;
+      font-size: 10px;
+      padding: 4px 8px;
+    }
+    .copy-btn:hover {
+      background: #5a6268;
     }
     .token-saved {
       font-size: 11px;
@@ -68,10 +77,27 @@
       margin-top: 4px;
       display: none;
     }
+    .cmd-box {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .cmd-box code {
+      background: none;
+      padding: 0;
+      color: #4ec9b0;
+    }
     .info {
       font-size: 12px;
       color: #666;
-      line-height: 1.5;
+      line-height: 1.6;
     }
     code {
       background: #f4f4f4;
@@ -82,24 +108,47 @@
     a {
       color: #0066cc;
     }
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 12px 0;
+    }
   </style>
 </head>
 <body>
-  <h1>BridgeMCP</h1>
+  <h1>🐍 BridgeMCP</h1>
   <div id="status" class="status disconnected">Checking...</div>
-  <div class="token-section">
-    <label for="token">Auth Token</label>
-    <div class="token-row">
-      <input type="password" id="token" placeholder="Paste token from server output">
-      <button id="saveToken">Save</button>
+
+  <div class="section">
+    <label for="port">Port</label>
+    <div class="input-row">
+      <input type="text" id="port" value="8620" style="width: 70px; flex: none;">
+      <label for="token" style="margin: auto 4px auto 8px; font-weight: 600;">Token</label>
+      <input type="password" id="token" placeholder="From server">
+      <button id="toggleToken" title="Show/hide">👁</button>
     </div>
-    <div id="tokenSaved" class="token-saved">Token saved. Reconnecting...</div>
   </div>
+
+  <div class="input-row" style="margin-bottom: 8px;">
+    <button id="saveToken" style="flex:1;">Save & Connect</button>
+  </div>
+  <div id="tokenSaved" class="token-saved">Saved. Reconnecting...</div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <label>Start Server</label>
+    <div class="cmd-box">
+      <code id="cmdText">npx bridgemcp</code>
+      <button class="copy-btn" id="copyCmd">Copy</button>
+    </div>
+  </div>
+
   <div class="info">
-    <p><strong>Server:</strong> <code>localhost:8620</code></p>
-    <p>Start with: <code>npx bridgemcp</code></p>
-    <p>Token is printed to console on server start and saved to <code>~/.bridgemcp/token</code></p>
+    <p>Token file: <code>~/.bridgemcp/token</code></p>
+    <p><a href="https://cobrahjh.github.io/bridgemcp/docs.html" target="_blank">Documentation</a></p>
   </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

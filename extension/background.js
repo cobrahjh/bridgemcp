@@ -3,12 +3,21 @@
  * Connects to local BridgeMCP server and executes browser commands
  */
 
-const BRIDGE_PORT = 8620;
+const DEFAULT_PORT = 8620;
 const BRIDGE_HOST = 'localhost';
 let ws = null;
 let reconnectTimer = null;
 let keepaliveTimer = null;
 let isConnected = false;
+
+// Get port from storage
+async function getPort() {
+    return new Promise(resolve => {
+        chrome.storage.local.get('bridgemcpPort', (data) => {
+            resolve(parseInt(data.bridgemcpPort) || DEFAULT_PORT);
+        });
+    });
+}
 
 // Per-tab console storage keys
 const consoleKeys = new Map();
@@ -70,6 +79,8 @@ async function connect() {
     if (ws && ws.readyState === WebSocket.OPEN) return;
 
     const token = await getToken();
+    const port = await getPort();
+
     if (!token) {
         console.log('[BridgeMCP] No auth token configured. Set token in extension popup.');
         scheduleReconnect();
@@ -77,7 +88,7 @@ async function connect() {
     }
 
     try {
-        ws = new WebSocket(`ws://${BRIDGE_HOST}:${BRIDGE_PORT}?token=${encodeURIComponent(token)}`);
+        ws = new WebSocket(`ws://${BRIDGE_HOST}:${port}?token=${encodeURIComponent(token)}`);
 
         ws.onopen = () => {
             console.log('[BridgeMCP] Connected');
@@ -614,6 +625,17 @@ connect();
 chrome.runtime.onStartup.addListener(connect);
 chrome.runtime.onInstalled.addListener(connect);
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    if (msg.type === 'status') sendResponse({ connected: isConnected });
+    if (msg.type === 'status') {
+        sendResponse({ connected: isConnected });
+    } else if (msg.type === 'reconnect') {
+        // Close existing connection and reconnect with new settings
+        if (ws) {
+            ws.close();
+            ws = null;
+        }
+        isConnected = false;
+        connect();
+        sendResponse({ ok: true });
+    }
     return true;
 });
