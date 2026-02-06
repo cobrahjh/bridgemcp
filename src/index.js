@@ -19,23 +19,42 @@ const VERSION = '1.0.0';
 const HTTP_PORT = process.env.BRIDGEMCP_PORT || 8620;
 const VERBOSE = process.argv.includes('--verbose') || process.argv.includes('-v');
 
+// Token file location
+const TOKEN_DIR = path.join(os.homedir(), '.bridgemcp');
+const TOKEN_FILE = path.join(TOKEN_DIR, 'token');
+
+// Load or generate auth token (persistent across restarts)
+function loadOrCreateToken() {
+    // Environment variable takes priority
+    if (process.env.BRIDGEMCP_TOKEN) return process.env.BRIDGEMCP_TOKEN;
+
+    // Try to read existing token
+    try {
+        if (fs.existsSync(TOKEN_FILE)) {
+            const token = fs.readFileSync(TOKEN_FILE, 'utf8').trim();
+            if (token && token.length >= 32) return token;
+        }
+    } catch (err) { /* ignore read errors */ }
+
+    // Generate new token and save
+    const token = crypto.randomBytes(32).toString('hex');
+    try {
+        if (!fs.existsSync(TOKEN_DIR)) fs.mkdirSync(TOKEN_DIR, { recursive: true });
+        fs.writeFileSync(TOKEN_FILE, token, { mode: 0o600 });
+    } catch (err) {
+        console.error('[BridgeMCP] Warning: Could not save token file:', TOKEN_FILE);
+    }
+    return token;
+}
+
+const AUTH_TOKEN = loadOrCreateToken();
+
 // Security configuration
-const AUTH_TOKEN = process.env.BRIDGEMCP_TOKEN || crypto.randomBytes(32).toString('hex');
 const MAX_BODY_SIZE = 1 * 1024 * 1024; // 1MB
 const MAX_PENDING = 100;
 const MAX_WAIT_SECONDS = 300;
 const RATE_LIMIT = 100;
 const RATE_WINDOW_MS = 60000;
-
-// Save token to file for clients to read
-const TOKEN_DIR = path.join(os.homedir(), '.bridgemcp');
-const TOKEN_FILE = path.join(TOKEN_DIR, 'token');
-try {
-    if (!fs.existsSync(TOKEN_DIR)) fs.mkdirSync(TOKEN_DIR, { recursive: true });
-    fs.writeFileSync(TOKEN_FILE, AUTH_TOKEN, { mode: 0o600 });
-} catch (err) {
-    console.error('[BridgeMCP] Warning: Could not save token file:', TOKEN_FILE);
-}
 
 // Extension connection
 let extensionSocket = null;

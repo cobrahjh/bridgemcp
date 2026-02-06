@@ -1,6 +1,6 @@
 {
   "name": "bridgemcp",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Browser automation via MCP and HTTP. Control Chrome from Claude, Cursor, VS Code, or any HTTP client.",
   "main": "src/index.js",
   "bin": {
