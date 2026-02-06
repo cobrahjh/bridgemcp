@@ -207,6 +207,7 @@
                 <ul>
                     <li><a href="#installation" class="active">Installation</a></li>
                     <li><a href="#quick-start">Quick Start</a></li>
+                    <li><a href="#cli-mode">CLI Mode</a></li>
                     <li><a href="#configuration">Configuration</a></li>
                 </ul>
             </div>
@@ -283,6 +284,80 @@ curl -X POST http://localhost:8620/navigate \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com"}'</code></pre>
+
+            <h2 id="cli-mode">CLI Mode</h2>
+            <p>Run browser commands directly from your terminal. CLI mode requires a running server in another terminal.</p>
+
+            <h3>Setup</h3>
+            <pre><code><span class="comment"># Terminal 1: Start the server</span>
+npx bridgemcp
+
+<span class="comment"># Terminal 2: Run commands</span>
+npx bridgemcp tabs                   <span class="comment"># List all tabs</span>
+npx bridgemcp navigate https://example.com  <span class="comment"># Navigate</span></code></pre>
+
+            <h3>Navigation Commands</h3>
+            <table>
+                <thead>
+                    <tr><th>Command</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>tabs</code></td><td>List all open tabs</td></tr>
+                    <tr><td><code>active</code></td><td>Get active tab info</td></tr>
+                    <tr><td><code>groups</code></td><td>List tab groups</td></tr>
+                    <tr><td><code>navigate &lt;url&gt;</code></td><td>Navigate to URL</td></tr>
+                    <tr><td><code>newtab &lt;url&gt;</code></td><td>Open new tab</td></tr>
+                    <tr><td><code>close [tabId]</code></td><td>Close tab</td></tr>
+                    <tr><td><code>focus [tabId]</code></td><td>Focus tab</td></tr>
+                    <tr><td><code>back</code></td><td>Go back</td></tr>
+                    <tr><td><code>forward</code></td><td>Go forward</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Interaction Commands</h3>
+            <table>
+                <thead>
+                    <tr><th>Command</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>click &lt;selector&gt;</code></td><td>Click element</td></tr>
+                    <tr><td><code>type &lt;selector&gt; &lt;text&gt;</code></td><td>Type text into element</td></tr>
+                    <tr><td><code>hover &lt;selector&gt;</code></td><td>Hover over element</td></tr>
+                    <tr><td><code>key &lt;key&gt;</code></td><td>Press keyboard key</td></tr>
+                    <tr><td><code>select &lt;selector&gt; &lt;value&gt;</code></td><td>Select dropdown option</td></tr>
+                    <tr><td><code>wait &lt;seconds&gt;</code></td><td>Wait N seconds</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Data Commands</h3>
+            <table>
+                <thead>
+                    <tr><th>Command</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>snapshot</code></td><td>Get accessibility tree</td></tr>
+                    <tr><td><code>screenshot [file]</code></td><td>Take screenshot (default: screenshot.png)</td></tr>
+                    <tr><td><code>read &lt;selector&gt;</code></td><td>Read element content</td></tr>
+                    <tr><td><code>execute &lt;script&gt;</code></td><td>Run JavaScript</td></tr>
+                    <tr><td><code>console [tabId]</code></td><td>Get console logs</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Examples</h3>
+            <pre><code><span class="comment"># Navigate and interact</span>
+npx bridgemcp navigate https://google.com
+npx bridgemcp type "input[name=q]" "BridgeMCP"
+npx bridgemcp key Enter
+
+<span class="comment"># Take a screenshot</span>
+npx bridgemcp screenshot search-results.png
+
+<span class="comment"># Get page structure for AI</span>
+npx bridgemcp snapshot</code></pre>
+
+            <div class="note">
+                <p><strong>Tip:</strong> CLI mode reads the auth token from <code>~/.bridgemcp/token</code>, which is created when the server starts. No manual token configuration needed.</p>
+            </div>
 
             <h2 id="configuration">Configuration</h2>
             <h3>Environment Variables</h3>
