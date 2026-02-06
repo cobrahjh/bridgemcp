@@ -55,6 +55,53 @@ bridgemcp
 }
 ```
 
+## CLI Mode
+
+Run commands directly from terminal (requires running server):
+
+```bash
+# Start server in one terminal
+bridgemcp
+
+# Run commands in another terminal
+bridgemcp tabs                        # List all tabs
+bridgemcp active                      # Get active tab
+bridgemcp navigate https://example.com  # Navigate to URL
+bridgemcp click "#submit"             # Click element
+bridgemcp type "#input" "hello"       # Type text
+bridgemcp snapshot                    # Get accessibility tree
+bridgemcp screenshot output.png       # Take screenshot
+bridgemcp key Enter                   # Press key
+bridgemcp wait 2                      # Wait 2 seconds
+bridgemcp back                        # Go back
+bridgemcp forward                     # Go forward
+```
+
+### All CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `tabs` | List all open tabs |
+| `active` | Get active tab info |
+| `groups` | List tab groups |
+| `navigate <url>` | Navigate to URL |
+| `newtab <url>` | Open new tab |
+| `close [tabId]` | Close tab |
+| `focus [tabId]` | Focus tab |
+| `back` | Go back |
+| `forward` | Go forward |
+| `click <selector>` | Click element |
+| `type <selector> <text>` | Type text into element |
+| `hover <selector>` | Hover over element |
+| `key <key>` | Press keyboard key |
+| `select <selector> <value>` | Select dropdown option |
+| `snapshot` | Get accessibility tree |
+| `screenshot [file]` | Take screenshot (default: screenshot.png) |
+| `read <selector>` | Read element content |
+| `execute <script>` | Run JavaScript |
+| `wait <seconds>` | Wait seconds |
+| `console [tabId]` | Get console logs |
+
 ## MCP Tools
 
 | Tool | Description |
