@@ -595,9 +595,9 @@ function startHttpServer(wss) {
         });
     });
 
-    server.listen(HTTP_PORT, () => {
-        console.error(`[BridgeMCP] HTTP server: http://localhost:${HTTP_PORT}`);
-        console.error(`[BridgeMCP] WebSocket: ws://localhost:${HTTP_PORT}`);
+    server.listen(HTTP_PORT, '0.0.0.0', () => {
+        console.error(`[BridgeMCP] HTTP server: http://0.0.0.0:${HTTP_PORT}`);
+        console.error(`[BridgeMCP] WebSocket: ws://0.0.0.0:${HTTP_PORT}`);
     });
 
     return server;
