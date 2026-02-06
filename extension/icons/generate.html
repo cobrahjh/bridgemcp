@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate BridgeMCP Icons</title>
+</head>
+<body>
+  <h1>BridgeMCP Icon Generator</h1>
+  <p>Right-click each canvas and "Save image as" with the filename shown:</p>
+
+  <h3>icon16.png</h3>
+  <canvas id="icon16" width="16" height="16"></canvas>
+
+  <h3>icon48.png</h3>
+  <canvas id="icon48" width="48" height="48"></canvas>
+
+  <h3>icon128.png</h3>
+  <canvas id="icon128" width="128" height="128"></canvas>
+
+  <script>
+    function drawIcon(canvas) {
+      const ctx = canvas.getContext('2d');
+      const size = canvas.width;
+      const scale = size / 128;
+
+      // Background - gradient blue
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#4F46E5');
+      gradient.addColorStop(1, '#7C3AED');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, size * 0.15);
+      ctx.fill();
+
+      // Bridge icon (simplified)
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = Math.max(2, 8 * scale);
+      ctx.lineCap = 'round';
+
+      // Bridge arc
+      ctx.beginPath();
+      ctx.arc(size/2, size * 0.7, size * 0.35, Math.PI, 0);
+      ctx.stroke();
+
+      // Bridge pillars
+      ctx.beginPath();
+      ctx.moveTo(size * 0.25, size * 0.7);
+      ctx.lineTo(size * 0.25, size * 0.85);
+      ctx.moveTo(size * 0.75, size * 0.7);
+      ctx.lineTo(size * 0.75, size * 0.85);
+      ctx.stroke();
+
+      // Road
+      ctx.beginPath();
+      ctx.moveTo(size * 0.1, size * 0.7);
+      ctx.lineTo(size * 0.9, size * 0.7);
+      ctx.stroke();
+    }
+
+    drawIcon(document.getElementById('icon16'));
+    drawIcon(document.getElementById('icon48'));
+    drawIcon(document.getElementById('icon128'));
+  </script>
+</body>
+</html>
