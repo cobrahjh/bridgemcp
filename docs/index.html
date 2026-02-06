@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BridgeMCP - Browser Automation for AI Tools</title>
+    <meta name="description" content="Control Chrome from Claude, Cursor, VS Code, or any HTTP client. MCP protocol support for seamless AI integration.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌉</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #3730A3;
+            --bg: #0F172A;
+            --bg-light: #1E293B;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: #334155;
+            --success: #10B981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        header {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, var(--primary), #7C3AED);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--text); }
+
+        /* Hero */
+        .hero {
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .badge a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        h1 {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 24px;
+        }
+
+        h1 .gradient {
+            background: linear-gradient(135deg, var(--primary), #7C3AED, #EC4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        /* Install */
+        .install {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 28px;
+            max-width: 500px;
+            margin: 40px auto 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .install code {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 15px;
+            color: var(--success);
+        }
+
+        .install button {
+            background: var(--border);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .install button:hover { background: #475569; }
+
+        /* Features */
+        .features {
+            padding: 80px 0;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 48px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+        }
+
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Tools */
+        .tools {
+            padding: 60px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .tools h2 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+
+        .tools > p {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .tool {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .tool span {
+            color: var(--primary);
+        }
+
+        /* How it works */
+        .how-it-works {
+            padding: 80px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .how-it-works h2 {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 48px;
+        }
+
+        .diagram {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 700px;
+            margin: 0 auto;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        .diagram .arrow {
+            color: var(--primary);
+        }
+
+        .diagram .label {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        /* Comparison */
+        .comparison {
+            padding: 80px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .comparison h2 {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 48px;
+        }
+
+        table {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        td:first-child {
+            font-weight: 500;
+        }
+
+        .check { color: var(--success); }
+        .x { color: #EF4444; }
+
+        /* CTA */
+        .cta {
+            padding: 80px 0;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .cta h2 {
+            font-size: 36px;
+            margin-bottom: 16px;
+        }
+
+        .cta p {
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        footer a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--text); }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 640px) {
+            h1 { font-size: 36px; }
+            .hero { padding: 60px 0; }
+            .nav-links { display: none; }
+            .install { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <a href="/" class="logo">🌉 <span>BridgeMCP</span></a>
+                <ul class="nav-links">
+                    <li><a href="/bridgemcp/docs.html">Docs</a></li>
+                    <li><a href="https://github.com/cobrahjh/bridgemcp">GitHub</a></li>
+                    <li><a href="https://www.npmjs.com/package/bridgemcp">npm</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <div class="badge">Now available on <a href="https://www.npmjs.com/package/bridgemcp">npm</a></div>
+            <h1>Browser automation<br>for <span class="gradient">AI tools</span></h1>
+            <p>Control Chrome from Claude, Cursor, VS Code, or any HTTP client. Native MCP protocol support for seamless AI integration.</p>
+            <div class="cta-buttons">
+                <a href="/bridgemcp/docs.html#quick-start" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/cobrahjh/bridgemcp" class="btn btn-secondary">View on GitHub</a>
+            </div>
+            <div class="install">
+                <code>npx bridgemcp</code>
+                <button onclick="navigator.clipboard.writeText('npx bridgemcp')">Copy</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2>Why BridgeMCP?</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔌</div>
+                    <h3>Dual Protocol</h3>
+                    <p>MCP for Claude/Cursor native integration + HTTP REST API for any tool. Use what works for you.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Your Browser</h3>
+                    <p>Uses your existing Chrome profile. Stay logged into all your services. No headless browser needed.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Local & Fast</h3>
+                    <p>Everything runs on your machine. No cloud latency, no data sent externally. Private by default.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Secure</h3>
+                    <p>Auth tokens, rate limiting, URL validation, origin checks. Built for real-world use.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📑</div>
+                    <h3>Tab Groups</h3>
+                    <p>Organize automation into tab groups. Feature not available in other browser MCP tools.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌳</div>
+                    <h3>Accessibility Snapshots</h3>
+                    <p>Get structured page data for AI understanding. Better than raw HTML for LLM consumption.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="tools">
+        <div class="container">
+            <h2>16 Browser Tools</h2>
+            <p>Everything you need to automate the browser</p>
+            <div class="tools-grid">
+                <div class="tool"><span>browser_navigate</span></div>
+                <div class="tool"><span>browser_click</span></div>
+                <div class="tool"><span>browser_type</span></div>
+                <div class="tool"><span>browser_hover</span></div>
+                <div class="tool"><span>browser_drag</span></div>
+                <div class="tool"><span>browser_press_key</span></div>
+                <div class="tool"><span>browser_select</span></div>
+                <div class="tool"><span>browser_snapshot</span></div>
+                <div class="tool"><span>browser_screenshot</span></div>
+                <div class="tool"><span>browser_console_logs</span></div>
+                <div class="tool"><span>browser_back</span></div>
+                <div class="tool"><span>browser_forward</span></div>
+                <div class="tool"><span>browser_tabs</span></div>
+                <div class="tool"><span>browser_new_tab</span></div>
+                <div class="tool"><span>browser_close_tab</span></div>
+                <div class="tool"><span>browser_wait</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="diagram">
+                <div>Claude Desktop / Cursor / VS Code / curl</div>
+                <div class="arrow">↓ <span class="label">MCP or HTTP</span></div>
+                <div>BridgeMCP Server (localhost:8620)</div>
+                <div class="arrow">↓ <span class="label">WebSocket</span></div>
+                <div>Chrome Extension</div>
+                <div class="arrow">↓ <span class="label">chrome.* APIs</span></div>
+                <div>Your Browser</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="comparison">
+        <div class="container">
+            <h2>Comparison</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>BridgeMCP</th>
+                        <th>BrowserMCP</th>
+                        <th>Playwright</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>MCP Protocol</td>
+                        <td class="check">✓</td>
+                        <td class="check">✓</td>
+                        <td class="x">✗</td>
+                    </tr>
+                    <tr>
+                        <td>HTTP API</td>
+                        <td class="check">✓</td>
+                        <td class="x">✗</td>
+                        <td class="x">✗</td>
+                    </tr>
+                    <tr>
+                        <td>Your Browser Profile</td>
+                        <td class="check">✓</td>
+                        <td class="check">✓</td>
+                        <td class="x">✗</td>
+                    </tr>
+                    <tr>
+                        <td>Tab Groups</td>
+                        <td class="check">✓</td>
+                        <td class="x">✗</td>
+                        <td class="x">✗</td>
+                    </tr>
+                    <tr>
+                        <td>No Headless Browser</td>
+                        <td class="check">✓</td>
+                        <td class="check">✓</td>
+                        <td class="x">✗</td>
+                    </tr>
+                    <tr>
+                        <td>Auth Tokens</td>
+                        <td class="check">✓</td>
+                        <td class="x">✗</td>
+                        <td>N/A</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to automate?</h2>
+            <p>Get started in under 2 minutes.</p>
+            <a href="/bridgemcp/docs.html#quick-start" class="btn btn-primary">Read the Docs</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="https://github.com/cobrahjh/bridgemcp">GitHub</a>
+                <a href="https://www.npmjs.com/package/bridgemcp">npm</a>
+                <a href="https://github.com/cobrahjh/bridgemcp/issues">Issues</a>
+            </div>
+            <p>MIT License &copy; 2024</p>
+        </div>
+    </footer>
+</body>
+</html>

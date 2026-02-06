@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - BridgeMCP</title>
+    <meta name="description" content="Complete documentation for BridgeMCP browser automation.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌉</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #3730A3;
+            --bg: #0F172A;
+            --bg-light: #1E293B;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: #334155;
+            --success: #10B981;
+            --warning: #F59E0B;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-light);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .sidebar-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+        .sidebar-logo span {
+            background: linear-gradient(135deg, var(--primary), #7C3AED);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-section {
+            margin-bottom: 24px;
+        }
+        .nav-section h4 {
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .nav-section ul {
+            list-style: none;
+        }
+        .nav-section a {
+            display: block;
+            padding: 8px 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .nav-section a:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+        .nav-section a.active {
+            background: var(--primary);
+            color: white;
+        }
+        /* Main content */
+        .main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 48px;
+            max-width: 900px;
+        }
+        h1 {
+            font-size: 36px;
+            margin-bottom: 16px;
+        }
+        h2 {
+            font-size: 24px;
+            margin: 48px 0 16px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+        h2:first-of-type {
+            margin-top: 32px;
+            border-top: none;
+            padding-top: 0;
+        }
+        h3 {
+            font-size: 18px;
+            margin: 32px 0 12px;
+            color: var(--text);
+        }
+        p {
+            margin-bottom: 16px;
+            color: var(--text-muted);
+        }
+        .lead {
+            font-size: 18px;
+            color: var(--text);
+            margin-bottom: 32px;
+        }
+        code {
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            background: var(--bg-light);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: var(--success);
+        }
+        pre {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 16px 0 24px;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text);
+        }
+        .comment { color: var(--text-muted); }
+        .string { color: #A5D6FF; }
+        .keyword { color: #FF7B72; }
+        .property { color: #79C0FF; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 24px;
+        }
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        th {
+            background: var(--bg-light);
+            font-weight: 600;
+            font-size: 14px;
+        }
+        td {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        td code {
+            color: var(--primary);
+        }
+        .note {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 24px 0;
+        }
+        .note p { margin: 0; color: var(--text); }
+        .note strong { color: var(--primary); }
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--warning);
+        }
+        .warning strong { color: var(--warning); }
+        ul, ol {
+            margin: 16px 0 24px 24px;
+            color: var(--text-muted);
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        a {
+            color: var(--primary);
+        }
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <a href="/" class="sidebar-logo">🌉 <span>BridgeMCP</span></a>
+
+            <div class="nav-section">
+                <h4>Getting Started</h4>
+                <ul>
+                    <li><a href="#installation" class="active">Installation</a></li>
+                    <li><a href="#quick-start">Quick Start</a></li>
+                    <li><a href="#configuration">Configuration</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <h4>MCP Integration</h4>
+                <ul>
+                    <li><a href="#claude-desktop">Claude Desktop</a></li>
+                    <li><a href="#cursor">Cursor</a></li>
+                    <li><a href="#vscode">VS Code</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <h4>HTTP API</h4>
+                <ul>
+                    <li><a href="#authentication">Authentication</a></li>
+                    <li><a href="#navigation">Navigation</a></li>
+                    <li><a href="#interaction">Interaction</a></li>
+                    <li><a href="#data">Data & Inspection</a></li>
+                    <li><a href="#tab-groups">Tab Groups</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <h4>Reference</h4>
+                <ul>
+                    <li><a href="#mcp-tools">MCP Tools List</a></li>
+                    <li><a href="#security">Security</a></li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main">
+            <h1>Documentation</h1>
+            <p class="lead">Complete guide to using BridgeMCP for browser automation with AI tools.</p>
+
+            <h2 id="installation">Installation</h2>
+
+            <h3>1. Install the Server</h3>
+            <p>Install BridgeMCP globally via npm:</p>
+            <pre><code>npm install -g bridgemcp</code></pre>
+            <p>Or run directly with npx:</p>
+            <pre><code>npx bridgemcp</code></pre>
+
+            <h3>2. Install the Chrome Extension</h3>
+            <ol>
+                <li>Download the extension from <a href="https://github.com/cobrahjh/bridgemcp/tree/master/extension">GitHub</a></li>
+                <li>Open Chrome and go to <code>chrome://extensions/</code></li>
+                <li>Enable <strong>Developer mode</strong> (top right toggle)</li>
+                <li>Click <strong>Load unpacked</strong></li>
+                <li>Select the <code>extension</code> folder</li>
+            </ol>
+
+            <h3>3. Configure the Extension</h3>
+            <p>When you start the server, it prints an auth token:</p>
+            <pre><code>[BridgeMCP] Auth token: abc123...
+[BridgeMCP] Token saved to: ~/.bridgemcp/token</code></pre>
+            <p>Click the BridgeMCP extension icon and paste this token to connect.</p>
+
+            <h2 id="quick-start">Quick Start</h2>
+            <p>Once installed, start the server:</p>
+            <pre><code>npx bridgemcp</code></pre>
+            <p>Test with curl:</p>
+            <pre><code><span class="comment"># Check connection (no auth needed)</span>
+curl http://localhost:8620/status
+
+<span class="comment"># List tabs (auth required)</span>
+curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8620/tabs
+
+<span class="comment"># Navigate to a URL</span>
+curl -X POST http://localhost:8620/navigate \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com"}'</code></pre>
+
+            <h2 id="configuration">Configuration</h2>
+            <h3>Environment Variables</h3>
+            <table>
+                <thead>
+                    <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>BRIDGEMCP_PORT</code></td><td>8620</td><td>HTTP/WebSocket port</td></tr>
+                    <tr><td><code>BRIDGEMCP_TOKEN</code></td><td>auto-generated</td><td>Auth token (or uses random)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>CLI Flags</h3>
+            <table>
+                <thead>
+                    <tr><th>Flag</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>--verbose</code> or <code>-v</code></td><td>Enable debug logging</td></tr>
+                    <tr><td><code>--mcp</code></td><td>Force MCP mode (auto-detected when piped)</td></tr>
+                </tbody>
+            </table>
+
+            <h2 id="claude-desktop">Claude Desktop</h2>
+            <p>Add to your <code>claude_desktop_config.json</code>:</p>
+            <pre><code>{
+  <span class="property">"mcpServers"</span>: {
+    <span class="property">"browser"</span>: {
+      <span class="property">"command"</span>: <span class="string">"npx"</span>,
+      <span class="property">"args"</span>: [<span class="string">"bridgemcp"</span>]
+    }
+  }
+}</code></pre>
+            <p>Config file locations:</p>
+            <ul>
+                <li>macOS: <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+                <li>Windows: <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
+            </ul>
+
+            <h2 id="cursor">Cursor</h2>
+            <p>Go to Cursor Settings → MCP and add:</p>
+            <pre><code>{
+  <span class="property">"browser"</span>: {
+    <span class="property">"command"</span>: <span class="string">"npx"</span>,
+    <span class="property">"args"</span>: [<span class="string">"bridgemcp"</span>]
+  }
+}</code></pre>
+
+            <h2 id="vscode">VS Code</h2>
+            <p>With the Claude extension, add to your MCP configuration:</p>
+            <pre><code>{
+  <span class="property">"browser"</span>: {
+    <span class="property">"command"</span>: <span class="string">"npx"</span>,
+    <span class="property">"args"</span>: [<span class="string">"bridgemcp"</span>]
+  }
+}</code></pre>
+
+            <h2 id="authentication">Authentication</h2>
+            <p>All HTTP endpoints (except <code>/status</code>) require authentication.</p>
+
+            <h3>Option 1: Authorization Header</h3>
+            <pre><code>curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8620/tabs</code></pre>
+
+            <h3>Option 2: Query Parameter</h3>
+            <pre><code>curl "http://localhost:8620/tabs?token=YOUR_TOKEN"</code></pre>
+
+            <div class="note">
+                <p><strong>Note:</strong> The token is saved to <code>~/.bridgemcp/token</code> on server start. You can also set <code>BRIDGEMCP_TOKEN</code> environment variable for a persistent token.</p>
+            </div>
+
+            <h2 id="navigation">Navigation Endpoints</h2>
+            <table>
+                <thead>
+                    <tr><th>Endpoint</th><th>Method</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>/status</code></td><td>GET</td><td>Connection status (no auth)</td></tr>
+                    <tr><td><code>/tabs</code></td><td>GET</td><td>List all tabs</td></tr>
+                    <tr><td><code>/active</code></td><td>GET</td><td>Get active tab</td></tr>
+                    <tr><td><code>/navigate</code></td><td>POST</td><td>Navigate to URL</td></tr>
+                    <tr><td><code>/back</code></td><td>POST</td><td>Go back in history</td></tr>
+                    <tr><td><code>/forward</code></td><td>POST</td><td>Go forward in history</td></tr>
+                    <tr><td><code>/newtab</code></td><td>POST</td><td>Open new tab</td></tr>
+                    <tr><td><code>/close</code></td><td>POST</td><td>Close tab</td></tr>
+                    <tr><td><code>/focus</code></td><td>POST</td><td>Focus tab</td></tr>
+                </tbody>
+            </table>
+
+            <h3>POST /navigate</h3>
+            <pre><code>curl -X POST http://localhost:8620/navigate \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "tabId": 123  <span class="comment">// optional, creates new tab if omitted</span>
+  }'</code></pre>
+
+            <h2 id="interaction">Interaction Endpoints</h2>
+            <table>
+                <thead>
+                    <tr><th>Endpoint</th><th>Method</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>/click</code></td><td>POST</td><td>Click element</td></tr>
+                    <tr><td><code>/type</code></td><td>POST</td><td>Type text</td></tr>
+                    <tr><td><code>/hover</code></td><td>POST</td><td>Hover over element</td></tr>
+                    <tr><td><code>/drag</code></td><td>POST</td><td>Drag and drop</td></tr>
+                    <tr><td><code>/key</code></td><td>POST</td><td>Press keyboard key</td></tr>
+                    <tr><td><code>/select</code></td><td>POST</td><td>Select dropdown option</td></tr>
+                    <tr><td><code>/wait</code></td><td>POST</td><td>Wait for seconds</td></tr>
+                </tbody>
+            </table>
+
+            <h3>POST /click</h3>
+            <pre><code><span class="comment">// By CSS selector</span>
+{ "tabId": 123, "selector": "button.submit" }
+
+<span class="comment">// By coordinates</span>
+{ "tabId": 123, "x": 500, "y": 300 }</code></pre>
+
+            <h3>POST /type</h3>
+            <pre><code>{
+  "tabId": 123,
+  "selector": "input[name=search]",  <span class="comment">// optional, uses focused element</span>
+  "text": "hello world",
+  "submit": true  <span class="comment">// optional, press Enter after</span>
+}</code></pre>
+
+            <h3>POST /key</h3>
+            <p>Supported keys: <code>Enter</code>, <code>Tab</code>, <code>Escape</code>, <code>Backspace</code>, <code>Delete</code>, <code>ArrowUp</code>, <code>ArrowDown</code>, <code>ArrowLeft</code>, <code>ArrowRight</code>, <code>Space</code>, or any single character.</p>
+            <pre><code>{ "tabId": 123, "key": "Enter" }</code></pre>
+
+            <h2 id="data">Data & Inspection Endpoints</h2>
+            <table>
+                <thead>
+                    <tr><th>Endpoint</th><th>Method</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>/read</code></td><td>POST</td><td>Read page content</td></tr>
+                    <tr><td><code>/snapshot</code></td><td>POST</td><td>Accessibility tree snapshot</td></tr>
+                    <tr><td><code>/screenshot</code></td><td>POST</td><td>Capture visible tab</td></tr>
+                    <tr><td><code>/console</code></td><td>GET</td><td>Get console logs</td></tr>
+                    <tr><td><code>/execute</code></td><td>POST</td><td>Run JavaScript</td></tr>
+                </tbody>
+            </table>
+
+            <h3>POST /snapshot</h3>
+            <p>Returns an accessibility tree - structured data about page elements with roles, names, and states. Ideal for AI understanding of page structure.</p>
+            <pre><code>curl -X POST http://localhost:8620/snapshot \
+  -H "Authorization: Bearer TOKEN" \
+  -d '{"tabId": 123}'</code></pre>
+            <p>Response:</p>
+            <pre><code>{
+  "url": "https://example.com",
+  "title": "Example",
+  "snapshot": {
+    "ref": "e0",
+    "role": "generic",
+    "children": [
+      { "ref": "e1", "role": "navigation", "name": "Main menu" },
+      { "ref": "e2", "role": "main", "children": [...] }
+    ]
+  }
+}</code></pre>
+
+            <h2 id="tab-groups">Tab Groups</h2>
+            <table>
+                <thead>
+                    <tr><th>Endpoint</th><th>Method</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>/groups</code></td><td>GET</td><td>List all groups</td></tr>
+                    <tr><td><code>/group</code></td><td>POST</td><td>Create group from tabs</td></tr>
+                    <tr><td><code>/group/add</code></td><td>POST</td><td>Add tabs to group</td></tr>
+                    <tr><td><code>/opengroup</code></td><td>POST</td><td>Open URLs in new group</td></tr>
+                    <tr><td><code>/ungroup</code></td><td>POST</td><td>Remove tabs from group</td></tr>
+                    <tr><td><code>/group/collapse</code></td><td>POST</td><td>Collapse/expand group</td></tr>
+                </tbody>
+            </table>
+
+            <h3>POST /opengroup</h3>
+            <pre><code>{
+  "urls": ["https://a.com", "https://b.com"],
+  "title": "Research",
+  "color": "blue"  <span class="comment">// blue, cyan, grey, green, orange, pink, purple, red, yellow</span>
+}</code></pre>
+
+            <h2 id="mcp-tools">MCP Tools Reference</h2>
+            <table>
+                <thead>
+                    <tr><th>Tool</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>browser_navigate</code></td><td>Navigate to a URL</td></tr>
+                    <tr><td><code>browser_back</code></td><td>Go back in history</td></tr>
+                    <tr><td><code>browser_forward</code></td><td>Go forward in history</td></tr>
+                    <tr><td><code>browser_click</code></td><td>Click an element</td></tr>
+                    <tr><td><code>browser_type</code></td><td>Type text into element</td></tr>
+                    <tr><td><code>browser_hover</code></td><td>Hover over element</td></tr>
+                    <tr><td><code>browser_drag</code></td><td>Drag and drop</td></tr>
+                    <tr><td><code>browser_press_key</code></td><td>Press keyboard key</td></tr>
+                    <tr><td><code>browser_select</code></td><td>Select dropdown option</td></tr>
+                    <tr><td><code>browser_snapshot</code></td><td>Get accessibility tree</td></tr>
+                    <tr><td><code>browser_screenshot</code></td><td>Take screenshot</td></tr>
+                    <tr><td><code>browser_console_logs</code></td><td>Get console output</td></tr>
+                    <tr><td><code>browser_tabs</code></td><td>List open tabs</td></tr>
+                    <tr><td><code>browser_new_tab</code></td><td>Open new tab</td></tr>
+                    <tr><td><code>browser_close_tab</code></td><td>Close tab</td></tr>
+                    <tr><td><code>browser_wait</code></td><td>Wait for seconds (max 300)</td></tr>
+                </tbody>
+            </table>
+
+            <h2 id="security">Security</h2>
+            <p>BridgeMCP includes multiple security layers:</p>
+            <ul>
+                <li><strong>Auth Tokens</strong> - Random 32-byte token generated on start, required for all operations</li>
+                <li><strong>Rate Limiting</strong> - 100 requests per minute per IP</li>
+                <li><strong>URL Validation</strong> - Blocks <code>javascript:</code>, <code>file:</code>, <code>data:</code> URLs</li>
+                <li><strong>Origin Validation</strong> - WebSocket only accepts <code>chrome-extension://</code> origins</li>
+                <li><strong>Request Size Limits</strong> - Max 1MB body size</li>
+                <li><strong>Single Connection</strong> - Only one extension can connect at a time</li>
+            </ul>
+
+            <div class="warning note">
+                <p><strong>Warning:</strong> BridgeMCP is designed for local use. Do not expose port 8620 to the internet.</p>
+            </div>
+
+            <h2 id="troubleshooting">Troubleshooting</h2>
+
+            <h3>Extension shows "Disconnected"</h3>
+            <ul>
+                <li>Ensure the server is running (<code>npx bridgemcp</code>)</li>
+                <li>Check the auth token is correctly set in extension popup</li>
+                <li>Verify port 8620 is not blocked or in use</li>
+            </ul>
+
+            <h3>Commands timeout</h3>
+            <ul>
+                <li>Check the target tab exists and is fully loaded</li>
+                <li>Verify CSS selectors are correct</li>
+                <li>Some pages block content scripts (chrome://, extensions)</li>
+            </ul>
+
+            <h3>Authentication errors</h3>
+            <ul>
+                <li>Token is printed on server start - copy it exactly</li>
+                <li>Use <code>Authorization: Bearer TOKEN</code> header</li>
+                <li>Or use <code>?token=TOKEN</code> query parameter</li>
+            </ul>
+
+            <h3>"Extension not connected" error</h3>
+            <ul>
+                <li>Install the Chrome extension from the extension folder</li>
+                <li>Click extension icon and enter the auth token</li>
+                <li>Check Chrome's extension page for errors</li>
+            </ul>
+        </main>
+    </div>
+</body>
+</html>
