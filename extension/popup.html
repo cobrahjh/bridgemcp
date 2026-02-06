@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      width: 280px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .connected {
+      background: #d4edda;
+      color: #155724;
+    }
+    .disconnected {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .info {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.5;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    a {
+      color: #0066cc;
+    }
+  </style>
+</head>
+<body>
+  <h1>BridgeMCP</h1>
+  <div id="status" class="status disconnected">Checking...</div>
+  <div class="info">
+    <p><strong>Server:</strong> <code>localhost:8620</code></p>
+    <p>Start with: <code>npx bridgemcp</code></p>
+    <p><a href="https://github.com/YOUR_USERNAME/bridgemcp" target="_blank">Documentation</a></p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

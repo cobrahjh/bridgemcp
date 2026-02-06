@@ -1,0 +1,35 @@
+{
+  "name": "bridgemcp",
+  "version": "1.0.0",
+  "description": "Browser automation via MCP and HTTP. Control Chrome from Claude, Cursor, VS Code, or any HTTP client.",
+  "main": "src/index.js",
+  "bin": {
+    "bridgemcp": "./src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js --verbose"
+  },
+  "keywords": [
+    "mcp",
+    "browser",
+    "automation",
+    "chrome",
+    "claude",
+    "cursor",
+    "ai",
+    "model-context-protocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/bridgemcp"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.14.0"
+  }
+}
