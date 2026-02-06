@@ -536,6 +536,10 @@ function startHttpServer(wss) {
         // Parse params
         const queryParams = Object.fromEntries(url.searchParams);
         delete queryParams.token; // Don't pass auth token as a command param
+        // Convert numeric query params (tabId, groupId, x, y, time)
+        ['tabId', 'groupId', 'x', 'y', 'time'].forEach(key => {
+            if (queryParams[key]) queryParams[key] = Number(queryParams[key]);
+        });
         let params;
         try {
             params = body ? { ...queryParams, ...JSON.parse(body) } : queryParams;

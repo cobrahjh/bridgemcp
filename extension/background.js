@@ -343,7 +343,7 @@ async function hoverInTab(tabId, selector, x, y) {
     return await chrome.scripting.executeScript({
         target: { tabId },
         func: (sel, px, py) => {
-            let el = sel ? document.querySelector(sel) : (px !== undefined ? document.elementFromPoint(px, py) : null);
+            let el = sel ? document.querySelector(sel) : (px != null ? document.elementFromPoint(px, py) : null);
             if (el) {
                 const rect = el.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
@@ -355,7 +355,7 @@ async function hoverInTab(tabId, selector, x, y) {
             }
             return { hovered: false, error: 'Element not found' };
         },
-        args: [selector, x, y]
+        args: [selector || null, x ?? null, y ?? null]
     }).then(r => r[0]?.result);
 }
 
