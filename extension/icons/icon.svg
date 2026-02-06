@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5"/>
+      <stop offset="100%" style="stop-color:#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="128" height="128" rx="24" fill="url(#grad)"/>
+  <!-- Cobra hood -->
+  <ellipse cx="64" cy="52" rx="38" ry="32" fill="#1E1E2E" opacity="0.3"/>
+  <ellipse cx="64" cy="50" rx="34" ry="28" fill="#F8FAFC"/>
+  <!-- Hood pattern -->
+  <ellipse cx="64" cy="48" rx="26" ry="20" fill="none" stroke="#4F46E5" stroke-width="2"/>
+  <ellipse cx="64" cy="46" rx="18" ry="14" fill="none" stroke="#7C3AED" stroke-width="1.5"/>
+  <!-- Eyes -->
+  <ellipse cx="52" cy="44" rx="5" ry="6" fill="#1E1E2E"/>
+  <ellipse cx="76" cy="44" rx="5" ry="6" fill="#1E1E2E"/>
+  <circle cx="53" cy="43" r="1.5" fill="#F8FAFC"/>
+  <circle cx="77" cy="43" r="1.5" fill="#F8FAFC"/>
+  <!-- Snout -->
+  <path d="M58 56 Q64 62 70 56" fill="none" stroke="#1E1E2E" stroke-width="2" stroke-linecap="round"/>
+  <!-- Tongue -->
+  <path d="M64 60 L64 72 M64 68 L60 74 M64 68 L68 74" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round"/>
+  <!-- Body coil -->
+  <path d="M44 78 Q34 88 44 98 Q54 108 64 98 Q74 88 84 98 Q94 108 84 118"
+        fill="none" stroke="#F8FAFC" stroke-width="8" stroke-linecap="round"/>
+  <!-- Scale pattern on body -->
+  <path d="M44 78 Q34 88 44 98 Q54 108 64 98 Q74 88 84 98 Q94 108 84 118"
+        fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-dasharray="4 8"/>
+</svg>
