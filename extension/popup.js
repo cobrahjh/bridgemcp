@@ -23,10 +23,10 @@ document.getElementById('toggleToken').addEventListener('click', () => {
     const btn = document.getElementById('toggleToken');
     if (tokenInput.type === 'password') {
         tokenInput.type = 'text';
-        btn.textContent = '🙈';
+        btn.textContent = 'Hide';
     } else {
         tokenInput.type = 'password';
-        btn.textContent = '👁';
+        btn.textContent = 'Show';
     }
 });
 
