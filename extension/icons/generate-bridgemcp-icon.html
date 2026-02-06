@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BridgeMCP Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a2e; color: white; }
+        .icons { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
+        .icon-box { text-align: center; }
+        canvas { border: 1px solid #444; border-radius: 8px; }
+        button { margin-top: 10px; padding: 8px 16px; cursor: pointer; }
+        h1 { color: #4ade80; }
+    </style>
+</head>
+<body>
+    <h1>BridgeMCP Icon Generator</h1>
+    <p>Right-click each icon and "Save image as..." to download</p>
+
+    <div class="icons">
+        <div class="icon-box">
+            <canvas id="icon128" width="128" height="128"></canvas>
+            <p>128x128</p>
+        </div>
+        <div class="icon-box">
+            <canvas id="icon48" width="48" height="48"></canvas>
+            <p>48x48</p>
+        </div>
+        <div class="icon-box">
+            <canvas id="icon16" width="16" height="16"></canvas>
+            <p>16x16</p>
+        </div>
+    </div>
+
+    <script>
+        function drawIcon(canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            const scale = size / 128;
+
+            // Background - dark gradient
+            const bgGrad = ctx.createLinearGradient(0, 0, size, size);
+            bgGrad.addColorStop(0, '#1e293b');
+            bgGrad.addColorStop(1, '#0f172a');
+            ctx.fillStyle = bgGrad;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, size * 0.15);
+            ctx.fill();
+
+            // Bridge arch - green gradient
+            const bridgeGrad = ctx.createLinearGradient(0, size * 0.3, 0, size * 0.7);
+            bridgeGrad.addColorStop(0, '#22c55e');
+            bridgeGrad.addColorStop(1, '#16a34a');
+            ctx.strokeStyle = bridgeGrad;
+            ctx.lineWidth = size * 0.08;
+            ctx.lineCap = 'round';
+
+            // Draw bridge arch
+            ctx.beginPath();
+            ctx.moveTo(size * 0.15, size * 0.7);
+            ctx.quadraticCurveTo(size * 0.5, size * 0.15, size * 0.85, size * 0.7);
+            ctx.stroke();
+
+            // Bridge pillars
+            ctx.lineWidth = size * 0.06;
+            ctx.beginPath();
+            ctx.moveTo(size * 0.25, size * 0.5);
+            ctx.lineTo(size * 0.25, size * 0.85);
+            ctx.moveTo(size * 0.75, size * 0.5);
+            ctx.lineTo(size * 0.75, size * 0.85);
+            ctx.stroke();
+
+            // Connection dots - representing data flow
+            const dotGrad = ctx.createRadialGradient(size * 0.5, size * 0.35, 0, size * 0.5, size * 0.35, size * 0.1);
+            dotGrad.addColorStop(0, '#4ade80');
+            dotGrad.addColorStop(1, '#22c55e');
+
+            // Center dot (larger)
+            ctx.fillStyle = dotGrad;
+            ctx.beginPath();
+            ctx.arc(size * 0.5, size * 0.32, size * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Small dots on bridge
+            ctx.fillStyle = '#86efac';
+            ctx.beginPath();
+            ctx.arc(size * 0.32, size * 0.45, size * 0.035, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(size * 0.68, size * 0.45, size * 0.035, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Subtle glow effect on center
+            ctx.shadowColor = '#22c55e';
+            ctx.shadowBlur = size * 0.15;
+            ctx.beginPath();
+            ctx.arc(size * 0.5, size * 0.32, size * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        // Draw all sizes
+        drawIcon(document.getElementById('icon128'));
+        drawIcon(document.getElementById('icon48'));
+        drawIcon(document.getElementById('icon16'));
+    </script>
+</body>
+</html>
