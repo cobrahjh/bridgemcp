@@ -9,6 +9,24 @@ let ws = null;
 let reconnectTimer = null;
 let keepaliveTimer = null;
 let isConnected = false;
+let userInitiatedConnect = false;  // True when user clicks Connect
+let notifiedDisconnect = false;    // Prevents repeat disconnect notifications
+
+// Badge status colors
+const BADGE_CONNECTED = '#10B981';    // Green
+const BADGE_DISCONNECTED = '#EF4444'; // Red
+const BADGE_CONNECTING = '#F59E0B';   // Yellow
+
+function updateBadge(status) {
+    const badges = {
+        connected: { text: 'ON', color: BADGE_CONNECTED },
+        disconnected: { text: 'OFF', color: BADGE_DISCONNECTED },
+        connecting: { text: '...', color: BADGE_CONNECTING }
+    };
+    const badge = badges[status] || badges.disconnected;
+    chrome.action.setBadgeText({ text: badge.text });
+    chrome.action.setBadgeBackgroundColor({ color: badge.color });
+}
 
 // Get port from storage
 async function getPort() {
@@ -42,14 +60,21 @@ async function getToken() {
     });
 }
 
-// Keepalive with Chrome alarms (survives service worker termination)
-chrome.alarms.create('keepalive', { periodInMinutes: 0.25 });
+// Check connection every minute
+chrome.alarms.create('connection-check', { periodInMinutes: 1 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name === 'keepalive') {
-        chrome.storage.local.set({ lastKeepalive: Date.now() });
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            connect();
+    if (alarm.name === 'connection-check') {
+        chrome.storage.local.set({ lastCheck: Date.now() });
+        // If we were connected but now disconnected, notify once
+        if (!isConnected && !notifiedDisconnect) {
+            // Check if we have a token (meaning user intended to be connected)
+            getToken().then(token => {
+                if (token) {
+                    showNotification('Disconnected', 'BridgeMCP server connection lost');
+                    notifiedDisconnect = true;
+                }
+            });
         }
     }
 });
@@ -83,9 +108,12 @@ async function connect() {
 
     if (!token) {
         console.log('[BridgeMCP] No auth token configured. Set token in extension popup.');
+        updateBadge('disconnected');
         scheduleReconnect();
         return;
     }
+
+    updateBadge('connecting');
 
     try {
         ws = new WebSocket(`ws://${BRIDGE_HOST}:${port}?token=${encodeURIComponent(token)}`);
@@ -93,15 +121,23 @@ async function connect() {
         ws.onopen = () => {
             console.log('[BridgeMCP] Connected');
             isConnected = true;
+            updateBadge('connected');
             clearTimeout(reconnectTimer);
             startKeepalive();
+
+            // Notify on successful connect if user initiated
+            if (userInitiatedConnect) {
+                showNotification('Connected', 'BridgeMCP server connected successfully');
+                userInitiatedConnect = false;
+            }
+            notifiedDisconnect = false;
 
             setTimeout(() => {
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({
                         type: 'connect',
                         agent: 'bridgemcp-extension',
-                        version: '1.0.0'
+                        version: '1.1.0'
                     }));
                 }
             }, 50);
@@ -121,30 +157,81 @@ async function connect() {
                 }));
             } catch (err) {
                 console.error('[BridgeMCP] Error:', err);
+                const errorMsg = formatError(msg?.action, err);
                 ws.send(JSON.stringify({
                     type: 'response',
                     id: msg?.id,
                     success: false,
-                    error: err.message
+                    error: errorMsg
                 }));
             }
         };
 
         ws.onclose = () => {
             console.log('[BridgeMCP] Disconnected');
+            const wasConnected = isConnected;
             isConnected = false;
+            updateBadge('disconnected');
             stopKeepalive();
-            scheduleReconnect();
+
+            // Don't auto-reconnect aggressively, let the 1-minute check handle it
+            // But if user just clicked connect, retry a few times
+            if (userInitiatedConnect) {
+                scheduleReconnect();
+            }
         };
 
         ws.onerror = () => {
             isConnected = false;
+            updateBadge('disconnected');
+            // Notify on failed user-initiated connect
+            if (userInitiatedConnect) {
+                showNotification('Connection Failed', 'Could not connect to BridgeMCP server');
+                userInitiatedConnect = false;
+            }
         };
 
     } catch (err) {
+        updateBadge('disconnected');
         scheduleReconnect();
     }
 }
+
+// Show browser notification (once per event)
+function showNotification(title, message) {
+    chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icons/icon128.png',
+        title: `BridgeMCP: ${title}`,
+        message: message,
+        priority: 1
+    });
+}
+
+// Format errors with more context
+function formatError(action, err) {
+    const msg = err.message || String(err);
+
+    // Add context based on action
+    if (msg.includes('No tab')) {
+        return `No active tab found. Open a tab first.`;
+    }
+    if (msg.includes('Cannot access')) {
+        return `Cannot access this page. Chrome blocks automation on chrome://, edge://, and extension pages.`;
+    }
+    if (msg.includes('Element not found') || msg.includes('No element')) {
+        return `Element not found: selector may be incorrect or element not visible.`;
+    }
+    if (msg.includes('Cannot find a next page')) {
+        return `No ${action === 'goBack' ? 'previous' : 'next'} page in browser history.`;
+    }
+    if (msg.includes('tabId')) {
+        return `Tab not found. It may have been closed.`;
+    }
+
+    return msg;
+}
+
 
 function scheduleReconnect() {
     clearTimeout(reconnectTimer);
@@ -620,20 +707,26 @@ async function collapseGroup(groupId, collapsed = true) {
     return { groupId, collapsed };
 }
 
-// Initialize
-connect();
-chrome.runtime.onStartup.addListener(connect);
-chrome.runtime.onInstalled.addListener(connect);
+// Initialize - start offline, user must click Connect
+updateBadge('disconnected');
+chrome.runtime.onStartup.addListener(() => {
+    updateBadge('disconnected');
+});
+chrome.runtime.onInstalled.addListener(() => {
+    updateBadge('disconnected');
+});
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'status') {
         sendResponse({ connected: isConnected });
     } else if (msg.type === 'reconnect') {
-        // Close existing connection and reconnect with new settings
+        // User clicked Connect - close existing and reconnect
         if (ws) {
             ws.close();
             ws = null;
         }
         isConnected = false;
+        userInitiatedConnect = true;
+        notifiedDisconnect = false;
         connect();
         sendResponse({ ok: true });
     }

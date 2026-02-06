@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const VERSION = '1.0.0';
+const VERSION = '1.2.0';
 const HTTP_PORT = process.env.BRIDGEMCP_PORT || 8620;
 const VERBOSE = process.argv.includes('--verbose') || process.argv.includes('-v');
 

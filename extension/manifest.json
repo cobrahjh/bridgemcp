@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BridgeMCP",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Browser automation for Claude, Cursor, and any AI tool",
   "permissions": [
     "activeTab",
@@ -11,7 +11,8 @@
     "storage",
     "alarms",
     "debugger",
-    "webNavigation"
+    "webNavigation",
+    "notifications"
   ],
   "host_permissions": [
     "<all_urls>"
