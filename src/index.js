@@ -126,6 +126,25 @@ function sendToExtension(action, params = {}) {
     });
 }
 
+// Actions that require a tabId - will auto-fill with active tab if not provided
+const ACTIONS_NEEDING_TAB = new Set([
+    'click', 'type', 'hover', 'dragDrop', 'pressKey', 'selectOption', 'setInputValue',
+    'readPage', 'snapshot', 'screenshot', 'executeScript', 'goBack', 'goForward',
+    'getConsoleLogs'
+]);
+
+// Send to extension with auto-fill of tabId from active tab
+async function sendWithActiveTab(action, params = {}) {
+    if (!params.tabId && ACTIONS_NEEDING_TAB.has(action)) {
+        const activeResult = await sendToExtension('getActiveTab', {});
+        const activeTab = activeResult.data || activeResult;
+        if (activeTab && activeTab.id) {
+            params = { ...params, tabId: activeTab.id };
+        }
+    }
+    return sendToExtension(action, params);
+}
+
 // ============================================
 // MCP Protocol (stdio)
 // ============================================
@@ -375,7 +394,7 @@ async function handleMcpRequest(request) {
                     throw new Error(`Unknown tool: ${name}`);
                 }
 
-                const result = await sendToExtension(action, args || {});
+                const result = await sendWithActiveTab(action, args || {});
                 return {
                     jsonrpc: '2.0',
                     id,
@@ -458,27 +477,27 @@ const HTTP_ROUTES = {
     'GET /tabs': () => sendToExtension('getTabs'),
     'GET /active': () => sendToExtension('getActiveTab'),
     'GET /groups': () => sendToExtension('listGroups'),
-    'GET /console': (params) => sendToExtension('getConsoleLogs', params),
+    'GET /console': (params) => sendWithActiveTab('getConsoleLogs', params),
 
     'POST /navigate': (params) => sendToExtension('navigate', params),
-    'POST /back': (params) => sendToExtension('goBack', params),
-    'POST /forward': (params) => sendToExtension('goForward', params),
+    'POST /back': (params) => sendWithActiveTab('goBack', params),
+    'POST /forward': (params) => sendWithActiveTab('goForward', params),
     'POST /newtab': (params) => sendToExtension('newTab', params),
     'POST /close': (params) => sendToExtension('closeTab', params),
     'POST /focus': (params) => sendToExtension('focusTab', params),
 
-    'POST /click': (params) => sendToExtension('click', params),
-    'POST /type': (params) => sendToExtension('type', params),
-    'POST /hover': (params) => sendToExtension('hover', params),
-    'POST /drag': (params) => sendToExtension('dragDrop', params),
-    'POST /key': (params) => sendToExtension('pressKey', params),
-    'POST /select': (params) => sendToExtension('selectOption', params),
-    'POST /input': (params) => sendToExtension('setInputValue', params),
+    'POST /click': (params) => sendWithActiveTab('click', params),
+    'POST /type': (params) => sendWithActiveTab('type', params),
+    'POST /hover': (params) => sendWithActiveTab('hover', params),
+    'POST /drag': (params) => sendWithActiveTab('dragDrop', params),
+    'POST /key': (params) => sendWithActiveTab('pressKey', params),
+    'POST /select': (params) => sendWithActiveTab('selectOption', params),
+    'POST /input': (params) => sendWithActiveTab('setInputValue', params),
 
-    'POST /read': (params) => sendToExtension('readPage', params),
-    'POST /snapshot': (params) => sendToExtension('snapshot', params),
-    'POST /screenshot': (params) => sendToExtension('screenshot', params),
-    'POST /execute': (params) => sendToExtension('executeScript', params),
+    'POST /read': (params) => sendWithActiveTab('readPage', params),
+    'POST /snapshot': (params) => sendWithActiveTab('snapshot', params),
+    'POST /screenshot': (params) => sendWithActiveTab('screenshot', params),
+    'POST /execute': (params) => sendWithActiveTab('executeScript', params),
 
     'POST /wait': async (params) => {
         const time = Math.min(Math.max(params.time || 1, 0), MAX_WAIT_SECONDS);
