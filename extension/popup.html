@@ -28,6 +28,46 @@
       background: #f8d7da;
       color: #721c24;
     }
+    .token-section {
+      margin-bottom: 12px;
+    }
+    .token-section label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #333;
+    }
+    .token-row {
+      display: flex;
+      gap: 6px;
+    }
+    .token-row input {
+      flex: 1;
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: monospace;
+    }
+    .token-row button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      background: #0066cc;
+      color: white;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .token-row button:hover {
+      background: #0052a3;
+    }
+    .token-saved {
+      font-size: 11px;
+      color: #155724;
+      margin-top: 4px;
+      display: none;
+    }
     .info {
       font-size: 12px;
       color: #666;
@@ -47,10 +87,18 @@
 <body>
   <h1>BridgeMCP</h1>
   <div id="status" class="status disconnected">Checking...</div>
+  <div class="token-section">
+    <label for="token">Auth Token</label>
+    <div class="token-row">
+      <input type="password" id="token" placeholder="Paste token from server output">
+      <button id="saveToken">Save</button>
+    </div>
+    <div id="tokenSaved" class="token-saved">Token saved. Reconnecting...</div>
+  </div>
   <div class="info">
     <p><strong>Server:</strong> <code>localhost:8620</code></p>
     <p>Start with: <code>npx bridgemcp</code></p>
-    <p><a href="https://github.com/YOUR_USERNAME/bridgemcp" target="_blank">Documentation</a></p>
+    <p>Token is printed to console on server start and saved to <code>~/.bridgemcp/token</code></p>
   </div>
   <script src="popup.js"></script>
 </body>

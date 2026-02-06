@@ -3,11 +3,35 @@
  * Connects to local BridgeMCP server and executes browser commands
  */
 
-const BRIDGE_URL = 'ws://localhost:8620';
+const BRIDGE_PORT = 8620;
+const BRIDGE_HOST = 'localhost';
 let ws = null;
 let reconnectTimer = null;
 let keepaliveTimer = null;
 let isConnected = false;
+
+// Per-tab console storage keys
+const consoleKeys = new Map();
+
+// URL scheme blocklist
+const BLOCKED_SCHEMES = ['javascript', 'file', 'data', 'vbscript'];
+
+function validateUrl(url) {
+    if (!url) return;
+    const scheme = url.split(':')[0].toLowerCase();
+    if (BLOCKED_SCHEMES.includes(scheme)) {
+        throw new Error(`Blocked URL scheme: ${scheme}. Only http/https URLs are allowed.`);
+    }
+}
+
+// Read auth token from storage
+async function getToken() {
+    return new Promise(resolve => {
+        chrome.storage.local.get('bridgemcpToken', (data) => {
+            resolve(data.bridgemcpToken || '');
+        });
+    });
+}
 
 // Keepalive with Chrome alarms (survives service worker termination)
 chrome.alarms.create('keepalive', { periodInMinutes: 0.25 });
@@ -42,11 +66,18 @@ function stopKeepalive() {
 
 chrome.storage.onChanged.addListener(() => {});
 
-function connect() {
+async function connect() {
     if (ws && ws.readyState === WebSocket.OPEN) return;
 
+    const token = await getToken();
+    if (!token) {
+        console.log('[BridgeMCP] No auth token configured. Set token in extension popup.');
+        scheduleReconnect();
+        return;
+    }
+
     try {
-        ws = new WebSocket(BRIDGE_URL);
+        ws = new WebSocket(`ws://${BRIDGE_HOST}:${BRIDGE_PORT}?token=${encodeURIComponent(token)}`);
 
         ws.onopen = () => {
             console.log('[BridgeMCP] Connected');
@@ -66,8 +97,9 @@ function connect() {
         };
 
         ws.onmessage = async (event) => {
+            let msg;
             try {
-                const msg = JSON.parse(event.data);
+                msg = JSON.parse(event.data);
                 const result = await handleCommand(msg);
 
                 ws.send(JSON.stringify({
@@ -124,6 +156,7 @@ async function handleCommand(msg) {
             return tab;
 
         case 'navigate':
+            validateUrl(params.url);
             return await navigateTab(params.tabId, params.url);
 
         case 'goBack':
@@ -133,6 +166,7 @@ async function handleCommand(msg) {
             return await goForward(params.tabId);
 
         case 'newTab':
+            if (params.url) validateUrl(params.url);
             return await chrome.tabs.create({ url: params.url || 'about:blank' });
 
         case 'closeTab':
@@ -188,6 +222,7 @@ async function handleCommand(msg) {
             return await addTabsToGroup(params.groupId, params.tabIds);
 
         case 'openUrlsInGroup':
+            if (params.urls) params.urls.forEach(validateUrl);
             return await openUrlsInGroup(params.urls, params.title, params.color);
 
         case 'listGroups':
@@ -474,30 +509,64 @@ async function captureTab(tabId) {
 
 async function getConsoleLogs(tabId) {
     const targetTabId = tabId || (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.id;
-    await chrome.scripting.executeScript({
-        target: { tabId: targetTabId },
-        func: () => {
-            if (window.__bridgeConsole) return;
-            window.__bridgeConsole = true;
-            window.__consoleLogs = [];
-            ['log', 'warn', 'error', 'info'].forEach(m => {
-                const orig = console[m];
-                console[m] = (...args) => {
-                    window.__consoleLogs.push({ type: m, time: Date.now(), msg: args.map(a => String(a)).join(' ') });
-                    if (window.__consoleLogs.length > 100) window.__consoleLogs.shift();
-                    orig.apply(console, args);
-                };
-            });
-        },
-        world: 'MAIN'
-    });
+
+    // Generate or retrieve a unique per-tab storage key
+    let storageKey = consoleKeys.get(targetTabId);
+
+    if (!storageKey) {
+        const bytes = new Uint8Array(8);
+        crypto.getRandomValues(bytes);
+        storageKey = '_bmc_' + Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+        consoleKeys.set(targetTabId, storageKey);
+
+        // Setup console interceptor with non-enumerable, random-keyed storage
+        await chrome.scripting.executeScript({
+            target: { tabId: targetTabId },
+            func: (key) => {
+                const logs = [];
+                Object.defineProperty(window, key, {
+                    get: () => { const copy = [...logs]; logs.length = 0; return copy; },
+                    configurable: true,
+                    enumerable: false
+                });
+                ['log', 'warn', 'error', 'info'].forEach(m => {
+                    const orig = console[m];
+                    console[m] = (...args) => {
+                        logs.push({
+                            type: m,
+                            time: Date.now(),
+                            msg: args.map(a => { try { return String(a); } catch (e) { return '[unstringifiable]'; } }).join(' ')
+                        });
+                        if (logs.length > 100) logs.shift();
+                        orig.apply(console, args);
+                    };
+                });
+            },
+            args: [storageKey],
+            world: 'MAIN'
+        });
+    }
+
+    // Retrieve logs via the random key
     const result = await chrome.scripting.executeScript({
         target: { tabId: targetTabId },
-        func: () => { const logs = window.__consoleLogs || []; window.__consoleLogs = []; return logs; },
+        func: (key) => { try { return window[key] || []; } catch (e) { return []; } },
+        args: [storageKey],
         world: 'MAIN'
     });
     return { logs: result[0]?.result || [] };
 }
+
+// Clean up console keys when tabs are closed or navigated
+chrome.tabs.onRemoved.addListener((tabId) => {
+    consoleKeys.delete(tabId);
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    if (changeInfo.url || changeInfo.status === 'loading') {
+        consoleKeys.delete(tabId);
+    }
+});
 
 // Tab Grouping
 async function createTabGroup(tabIds, title, color) {

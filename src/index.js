@@ -10,22 +10,67 @@
 
 const http = require('http');
 const WebSocket = require('ws');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 const VERSION = '1.0.0';
 const HTTP_PORT = process.env.BRIDGEMCP_PORT || 8620;
 const VERBOSE = process.argv.includes('--verbose') || process.argv.includes('-v');
 
+// Security configuration
+const AUTH_TOKEN = process.env.BRIDGEMCP_TOKEN || crypto.randomBytes(32).toString('hex');
+const MAX_BODY_SIZE = 1 * 1024 * 1024; // 1MB
+const MAX_PENDING = 100;
+const MAX_WAIT_SECONDS = 300;
+const RATE_LIMIT = 100;
+const RATE_WINDOW_MS = 60000;
+
+// Save token to file for clients to read
+const TOKEN_DIR = path.join(os.homedir(), '.bridgemcp');
+const TOKEN_FILE = path.join(TOKEN_DIR, 'token');
+try {
+    if (!fs.existsSync(TOKEN_DIR)) fs.mkdirSync(TOKEN_DIR, { recursive: true });
+    fs.writeFileSync(TOKEN_FILE, AUTH_TOKEN, { mode: 0o600 });
+} catch (err) {
+    console.error('[BridgeMCP] Warning: Could not save token file:', TOKEN_FILE);
+}
+
 // Extension connection
 let extensionSocket = null;
 let pendingRequests = new Map();
-let requestId = 0;
+
+// Rate limiting
+const rateLimitMap = new Map();
 
 // ============================================
-// CORE: Extension Communication
+// CORE: Security & Extension Communication
 // ============================================
 
 function log(...args) {
     if (VERBOSE) console.error('[BridgeMCP]', ...args);
+}
+
+function checkRateLimit(ip) {
+    const now = Date.now();
+    const entry = rateLimitMap.get(ip);
+    if (!entry || now > entry.resetTime) {
+        rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
+        return true;
+    }
+    entry.count++;
+    return entry.count <= RATE_LIMIT;
+}
+
+function authenticate(req) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader === `Bearer ${AUTH_TOKEN}`) return true;
+
+    const url = new URL(req.url, `http://localhost:${HTTP_PORT}`);
+    if (url.searchParams.get('token') === AUTH_TOKEN) return true;
+
+    return false;
 }
 
 function sendToExtension(action, params = {}) {
@@ -35,7 +80,12 @@ function sendToExtension(action, params = {}) {
             return;
         }
 
-        const id = ++requestId;
+        if (pendingRequests.size >= MAX_PENDING) {
+            reject(new Error('Too many pending requests'));
+            return;
+        }
+
+        const id = crypto.randomBytes(8).toString('hex');
         const timeout = setTimeout(() => {
             pendingRequests.delete(id);
             reject(new Error('Request timeout'));
@@ -46,7 +96,10 @@ function sendToExtension(action, params = {}) {
                 clearTimeout(timeout);
                 resolve(data);
             },
-            reject
+            reject: (err) => {
+                clearTimeout(timeout);
+                reject(err);
+            }
         });
 
         extensionSocket.send(JSON.stringify({ id, action, params }));
@@ -230,11 +283,11 @@ const MCP_TOOLS = [
     },
     {
         name: 'browser_wait',
-        description: 'Wait for specified seconds',
+        description: 'Wait for specified seconds (max 300)',
         inputSchema: {
             type: 'object',
             properties: {
-                time: { type: 'number', description: 'Seconds to wait' }
+                time: { type: 'number', description: 'Seconds to wait (max 300)' }
             },
             required: ['time']
         }
@@ -287,13 +340,14 @@ async function handleMcpRequest(request) {
             try {
                 const { name, arguments: args } = params;
 
-                // Special case for wait
+                // Special case for wait (capped)
                 if (name === 'browser_wait') {
-                    await new Promise(r => setTimeout(r, (args.time || 1) * 1000));
+                    const time = Math.min(Math.max(args.time || 1, 0), MAX_WAIT_SECONDS);
+                    await new Promise(r => setTimeout(r, time * 1000));
                     return {
                         jsonrpc: '2.0',
                         id,
-                        result: { content: [{ type: 'text', text: JSON.stringify({ waited: args.time }) }] }
+                        result: { content: [{ type: 'text', text: JSON.stringify({ waited: time }) }] }
                     };
                 }
 
@@ -333,7 +387,7 @@ async function handleMcpRequest(request) {
             return {
                 jsonrpc: '2.0',
                 id,
-                error: { code: -32601, message: `Method not found: ${method}` }
+                error: { code: -32601, message: 'Method not found' }
             };
     }
 }
@@ -408,8 +462,9 @@ const HTTP_ROUTES = {
     'POST /execute': (params) => sendToExtension('executeScript', params),
 
     'POST /wait': async (params) => {
-        await new Promise(r => setTimeout(r, (params.time || 1) * 1000));
-        return { waited: params.time || 1 };
+        const time = Math.min(Math.max(params.time || 1, 0), MAX_WAIT_SECONDS);
+        await new Promise(r => setTimeout(r, time * 1000));
+        return { waited: time };
     },
 
     'POST /group': (params) => sendToExtension('createGroup', params),
@@ -419,36 +474,82 @@ const HTTP_ROUTES = {
     'POST /group/collapse': (params) => sendToExtension('collapseGroup', params),
 };
 
+// Routes that don't require authentication
+const PUBLIC_ROUTES = new Set(['GET /status']);
+
 function startHttpServer(wss) {
     const server = http.createServer(async (req, res) => {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        // Only allow CORS for the Chrome extension origin, not wildcard
+        const origin = req.headers['origin'];
+        if (origin && origin.startsWith('chrome-extension://')) {
+            res.setHeader('Access-Control-Allow-Origin', origin);
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        }
         res.setHeader('Content-Type', 'application/json');
 
         if (req.method === 'OPTIONS') {
-            res.writeHead(200);
+            res.writeHead(204);
             res.end();
             return;
         }
 
-        // Parse body
-        let body = '';
-        if (req.method === 'POST') {
-            for await (const chunk of req) body += chunk;
+        const url = new URL(req.url, `http://localhost:${HTTP_PORT}`);
+        const routeKey = `${req.method} ${url.pathname}`;
+
+        // Rate limiting
+        const clientIp = req.socket.remoteAddress || 'unknown';
+        if (!checkRateLimit(clientIp)) {
+            res.writeHead(429);
+            res.end(JSON.stringify({ error: 'Too many requests' }));
+            return;
         }
 
-        // Parse query params for GET
-        const url = new URL(req.url, `http://localhost:${HTTP_PORT}`);
-        const queryParams = Object.fromEntries(url.searchParams);
-        const params = body ? { ...queryParams, ...JSON.parse(body) } : queryParams;
+        // Authentication (skip for public routes and OPTIONS)
+        if (!PUBLIC_ROUTES.has(routeKey) && !authenticate(req)) {
+            res.writeHead(401);
+            res.end(JSON.stringify({ error: 'Unauthorized. Provide token via Authorization header or ?token= query param.' }));
+            return;
+        }
 
-        const routeKey = `${req.method} ${url.pathname}`;
+        // Parse body with size limit
+        let body = '';
+        if (req.method === 'POST') {
+            let bodySize = 0;
+            try {
+                for await (const chunk of req) {
+                    bodySize += chunk.length;
+                    if (bodySize > MAX_BODY_SIZE) {
+                        res.writeHead(413);
+                        res.end(JSON.stringify({ error: 'Request body too large' }));
+                        return;
+                    }
+                    body += chunk;
+                }
+            } catch (err) {
+                res.writeHead(400);
+                res.end(JSON.stringify({ error: 'Failed to read request body' }));
+                return;
+            }
+        }
+
+        // Parse params
+        const queryParams = Object.fromEntries(url.searchParams);
+        delete queryParams.token; // Don't pass auth token as a command param
+        let params;
+        try {
+            params = body ? { ...queryParams, ...JSON.parse(body) } : queryParams;
+        } catch (err) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: 'Invalid JSON in request body' }));
+            return;
+        }
+
         const handler = HTTP_ROUTES[routeKey];
 
         if (!handler) {
             res.writeHead(404);
-            res.end(JSON.stringify({ error: 'Not found', availableRoutes: Object.keys(HTTP_ROUTES) }));
+            res.end(JSON.stringify({ error: 'Not found' }));
             return;
         }
 
@@ -457,13 +558,34 @@ function startHttpServer(wss) {
             res.writeHead(200);
             res.end(JSON.stringify(result.data || result));
         } catch (err) {
+            log('HTTP error:', err.message);
             res.writeHead(500);
-            res.end(JSON.stringify({ error: err.message }));
+            res.end(JSON.stringify({ error: 'Internal server error' }));
         }
     });
 
-    // WebSocket upgrade for extension
+    // WebSocket upgrade with origin validation and auth
     server.on('upgrade', (request, socket, head) => {
+        const origin = request.headers['origin'] || '';
+        const upgradeUrl = new URL(request.url, `http://localhost:${HTTP_PORT}`);
+        const token = upgradeUrl.searchParams.get('token');
+
+        // Validate origin: allow chrome-extension:// and no origin (non-browser clients)
+        if (origin && !origin.startsWith('chrome-extension://')) {
+            log('WebSocket rejected: invalid origin', origin);
+            socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+            socket.destroy();
+            return;
+        }
+
+        // Validate token
+        if (token !== AUTH_TOKEN) {
+            log('WebSocket rejected: invalid token');
+            socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+            socket.destroy();
+            return;
+        }
+
         wss.handleUpgrade(request, socket, head, (ws) => {
             wss.emit('connection', ws, request);
         });
@@ -485,6 +607,13 @@ function startWebSocketServer() {
     const wss = new WebSocket.Server({ noServer: true });
 
     wss.on('connection', (ws) => {
+        // Reject if an extension is already connected
+        if (extensionSocket && extensionSocket.readyState === WebSocket.OPEN) {
+            log('Rejecting new connection: extension already connected');
+            ws.close(4000, 'Another extension is already connected');
+            return;
+        }
+
         log('Extension connected');
         extensionSocket = ws;
 
@@ -511,7 +640,9 @@ function startWebSocketServer() {
 
         ws.on('close', () => {
             log('Extension disconnected');
-            extensionSocket = null;
+            if (extensionSocket === ws) {
+                extensionSocket = null;
+            }
         });
     });
 
@@ -533,4 +664,6 @@ if (isMcpMode) {
 
 console.error(`[BridgeMCP] v${VERSION} started`);
 console.error(`[BridgeMCP] Mode: ${isMcpMode ? 'MCP + HTTP' : 'HTTP only'}`);
+console.error(`[BridgeMCP] Auth token: ${AUTH_TOKEN}`);
+console.error(`[BridgeMCP] Token saved to: ${TOKEN_FILE}`);
 console.error('[BridgeMCP] Waiting for extension connection...');
